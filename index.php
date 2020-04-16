@@ -171,7 +171,7 @@ function startTest(int $code, string $name): object
     return $sess;
 }
 
-function submitAnswer(object $session, int $question, array $answers, bool $multiquiz = false): object
+function submitAnswer(object $session, int $question, array $answers, int $points = 1, bool $multiquiz = false): object
 {
     if(sizeof($answers) > 1 && !$multiquiz) {
         user_error("Answers array size is incorrect for type 'quiz' (expected 1). Type has been automatically converted to 'multiquiz'.", E_USER_NOTICE);
@@ -181,7 +181,7 @@ function submitAnswer(object $session, int $question, array $answers, bool $mult
     return api("test.responses.answer", [
         "answer"       => $answers,
         "homework"     => true,
-        "point"        => (string) 2,
+        "point"        => (string) $points,
         "homeworkType" => 1,
         "question_id"  => (string) $question,
         "show_answer"  => 0,
@@ -210,7 +210,7 @@ function main(int $argc, array $argv): int
         
         logMsg("INFO", "Attempting to answer question");
         logMsg("INFO", $shouldMiss ? "This question will be answered incorrectly, because of settings" : "Submitting answers...");
-        $result = submitAnswer($sess, (int) $question->id, $answers, $question->type === "multiquiz");
+        $result = submitAnswer($sess, (int) $question->id, $answers, (int) $question->point, $question->type === "multiquiz");
         
         logMsg($result->message_scene !== "failed" ? "SUCC" : "ALERT", "Response from server: " . $result->message);
         
