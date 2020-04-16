@@ -26,10 +26,11 @@ const DEFAULT_HEADERS = [
 
 
 # CLI Options
-$opts = getopt("C:T:", ["vvv", "quiet", "dont-clean", "name:", "mistakes::"]);
+$opts = getopt("C:T:", ["vvv", "quiet", "dont-clean", "name:", "mistakes::", "override-point-count::"]);
 define("GAMECODE", (int) $opts["C"], false);
 define("GAMENAME", $opts["name"], false);
 define("MISTAKES", isset($opts["mistakes"]) ? (int) $opts["mistakes"] : 0, false);
+define("POINTS", isset($opts["override-point-count"]) ? (int) $opts["override-point-count"] : NULL, false);
 define("QUIET", isset($opts["quiet"]), false);
 define("VERBOSE", isset($opts["vvv"]), false);
 define("CLEAN", !isset($opts["dont-clean"]), false);
@@ -181,7 +182,7 @@ function submitAnswer(object $session, int $question, array $answers, int $point
     return api("test.responses.answer", [
         "answer"       => $answers,
         "homework"     => true,
-        "point"        => (string) $points,
+        "point"        => (string) (POINTS ?? $points),
         "homeworkType" => 1,
         "question_id"  => (string) $question,
         "show_answer"  => 0,
