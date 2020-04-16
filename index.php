@@ -207,7 +207,7 @@ function main(int $argc, array $argv): int
         
         // Will be triggered only if $shouldMiss = true
         if($question->type === "quiz" && sizeof($answers) > 1)
-            $answers = [array_rand($answers)]; // Select random incorrect answer
+            $answers = [ $answers[array_rand($answers)] ]; // Select random incorrect answer
         
         logMsg("INFO", "Attempting to answer question");
         logMsg("INFO", $shouldMiss ? "This question will be answered incorrectly, because of settings" : "Submitting answers...");
