@@ -125,7 +125,7 @@ function clean(): void
 
 function fixSession(object &$session): void
 {
-    $doc = json_decode(http("GET", "https://naurok.com.ua/api/test/documents/" . $session->settings->document_id));
+    $doc = json_decode(http("GET", "https://naurok.com.ua/api/test/session/" . $session->settings->document_id));
     if(!$doc)
         abort("Could not fetch answers");
     
