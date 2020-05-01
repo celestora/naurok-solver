@@ -40,6 +40,14 @@ define("COOKIE_URI", tempnam(__DIR__, "urCookie"), false);
 
 
 # Util functions
+function ev(string $eventName, array $params = []): void
+{
+    $eventName = ucfirst($eventName);
+    $hookName  = "on$eventName";
+    if(function_exists($hookName))
+        call_user_func_array($hookName, $params);
+}
+
 function logMsg(string $level, string $message, bool $verbose = false): void
 {
     if(QUIET)
@@ -216,6 +224,7 @@ function main(int $argc, array $argv): int
     register_shutdown_function("clean");
     
     $sess = startTest(GAMECODE, GAMENAME);
+    ev("sessionStart", [ $sess->session->uuid ]);
     
     for($i = 0; $i < sizeof($sess->questions); $i++) {
         $shouldMiss = MISTAKES === 0 ? false : (sizeof($sess->questions) - ($i + 1)) < MISTAKES;
@@ -231,19 +240,23 @@ function main(int $argc, array $argv): int
         
         logMsg("INFO", "Attempting to answer question");
         logMsg("INFO", $shouldMiss ? "This question will be answered incorrectly, because of settings" : "Submitting answers...");
+        ev("questionAnswering", [ (int) $question->id, $answers, $shouldMiss ]);
         $result = submitAnswer($sess, (int) $question->id, $answers, (int) $question->point, $question->type === "multiquiz");
         
         logMsg($result->message_scene !== "failed" ? "SUCC" : "ALERT", "Response from server: " . $result->message);
+        ev("questionAnswered", [ (int) $question->id, $answers, $shouldMiss, $result->message ]);
         
         sleep(SLEEPTIME);
     }
     
+    ev("sessionClosing", [ $sess->session->uuid ]);
     logMsg("INFO", "Answered all questions");
     logMsg("INFO", "Closing session");
     api("test.sessions.end/" . $sess->session->id, [
         "payload" => base64_encode(openssl_random_pseudo_bytes(64)),
     ]);
     
+    ev("sessionClosed", [ $sess->session->uuid ]);
     logMsg("SUCC", "Session closed sucessfully: https://naurok.com.ua/test/complete/" . $sess->session->uuid);
     
     return 0;
