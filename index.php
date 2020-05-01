@@ -26,10 +26,11 @@ const DEFAULT_HEADERS = [
 
 
 # CLI Options
-$opts = getopt("C:T:", ["vvv", "quiet", "dont-clean", "name:", "mistakes::", "override-point-count::"]);
+$opts = getopt("C:T:", ["vvv", "quiet", "dont-clean", "name:", "mistakes::", "proxy-database::", "override-point-count::"]);
 define("GAMECODE", (int) $opts["C"], false);
 define("GAMENAME", $opts["name"], false);
 define("MISTAKES", isset($opts["mistakes"]) ? (int) $opts["mistakes"] : 0, false);
+define("MISTAKES", isset($opts["proxy-database"]) ? $opts["proxy-database"] : NULL, false);
 define("POINTS", isset($opts["override-point-count"]) ? (int) $opts["override-point-count"] : NULL, false);
 define("QUIET", isset($opts["quiet"]), false);
 define("VERBOSE", isset($opts["vvv"]), false);
@@ -66,6 +67,23 @@ function readHeaders(string $headers): \Traversable
     }
 }
 
+function applyProxy(resource &$curl): void
+{
+    if(is_null(PROXYDB))
+        return;
+    else(!file_exists(PROXYDB))
+        abort("Proxy database file (" . PROXYDB . ") does not exist.");
+    
+    $proxies = file(PROXYDB, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if(sizeof($proxies) < 1)
+        return;
+    
+    $proxy = $proxies[array_rand($proxies)];
+    [$addr, $port, $user, $pass] = explode(":", $proxy);
+    curl_setopt($curl, CURLOPT_PROXY, "http://$addr:$port");
+    curl_setopt($curl, CURLOPT_PROXYAUTH, "$user:$pass");
+}
+
 function http(string $method, string $url, ?string $payload = NULL, array $headers = [], &$responseHeaders = NULL): ?string
 {
     $ch = curl_init();
@@ -80,6 +98,7 @@ function http(string $method, string $url, ?string $payload = NULL, array $heade
     curl_setopt($ch, CURLOPT_TCP_KEEPALIVE, true);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    applyProxy($ch);
     
     $response = curl_exec($ch);
     if($response === false)
@@ -197,6 +216,7 @@ function main(int $argc, array $argv): int
     register_shutdown_function("clean");
     
     $sess = startTest(GAMECODE, GAMENAME);
+    
     for($i = 0; $i < sizeof($sess->questions); $i++) {
         $shouldMiss = MISTAKES === 0 ? false : (sizeof($sess->questions) - ($i + 1)) < MISTAKES;
         $question   = $sess->questions[$i];
