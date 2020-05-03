@@ -1,4 +1,4 @@
-# Naurok AutoSolver
+# Naurok AutoSolver | FIXED
 Скрипт для автоматического прохождения домашних заданий на naurok.ua. \
 Демо: [Бот в Telegram](https://teleg.run/UrsulaEBot) (может поддерживать не все возможности).
 
